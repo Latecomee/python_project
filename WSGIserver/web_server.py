@@ -2,18 +2,19 @@ import socket
 import re
 import multiprocessing
 import time
-import mini_frame
+import sys
 
 class mini_server(object):
 
-    def __init__(self):
+    def __init__(self,port,app):
         # 创建套接字
         self.tcp_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         # 绑定端口
-        self.tcp_socket.bind(("",7788))
+        self.tcp_socket.bind(("",port))
         # 将套接字设为监听模式
         self.tcp_socket.listen(128)
+        self.application = app
 
     def server_to_client(self,new_client_socket):
         '''处理client发过的数据,根据需求回发内容'''
@@ -43,7 +44,7 @@ class mini_server(object):
         else:
             env = dict()  # 这个字典存放的是web服务器要传给client的内容的路径
             env["PATH_INFO"] = file_name
-            body = mini_frame.application(env, self.set_response_hearders)
+            body = self.application(env, self.set_response_hearders)
             response_header = "HTTP/1.1 "+ self.statu + "\r\n"
             for temp in self.header:
                 response_header += "%s:%s\r\n" % (temp[0],temp[1])
@@ -78,7 +79,33 @@ class mini_server(object):
 
 def main():
     """整体控制,创建对象"""
-    t = mini_server()
+    if len(sys.argv)==3:
+        try:
+            port = int(sys.argv[1])  # 端口
+            frame_app_name = sys.argv[2]  # mini_server:application
+        except:
+            print("端口输入错误!请重新输入")
+            return
+    else:
+        print("输入参数有误,请按照一下方式执行程序1:")
+        print("python3 web_server.py 7788 mini_server:application")
+        return
+
+    ret = re.match(r"([^:]+):(.*)",frame_app_name)
+    if ret:
+        frame_name = ret.group(1)  # mini_server
+        app_name = ret.group(2)  # application
+    else:
+        print("输入参数有误,请按照一下方式执行程序:")
+        print("python3 web_server.py 7788 mini_server:application")
+        return
+
+    sys.path.append("./dynamic")  # 为了让__import__()函数找到 mini_server.py
+    "import frame_name  # 此时import会将frame_name视为模块名,试图导入frame_name模块,而非frame_name保存的内容"
+    frame = __import__(frame_name)  # 返回值标记这个导入的模块
+    app = getattr(frame,app_name)  # 此时app指向了dynamic/mini_server模块中的application这个函数
+
+    t = mini_server(port,app)
     t.run_forever()
 
 
