@@ -2,8 +2,8 @@ import re
 
 """
 URL_FUNC_DICT = {
-    "/index.py" : index,
-    "/center.py" : center
+    "/index.html" : index,
+    "/center.html" : center
     }
 """
 
@@ -18,14 +18,14 @@ def route(PATH):
     return set_func
 
 
-@route("/index.py")
+@route("/index.html")
 def index():
     with open("./templates/index.html") as f:
         context = f.read()
     return context
 
 
-@route("/center.py")
+@route("/center.html")
 def center():
     with open("./templates/center.html") as f:
         context = f.read()
@@ -41,6 +41,7 @@ def application(env,start_response_header):
     #     return index()
     # elif file_name == "/center.py":
     #     return center()
-
-    func = URL_FUNC_DICT[file_name]
-    return func()
+    try:  
+        return URL_FUNC_DICT[file_name]()
+    except Exception as e:
+        return "产生异常: %s" % e

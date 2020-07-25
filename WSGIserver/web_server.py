@@ -29,7 +29,8 @@ class mini_server(object):
         if ret:
             file_name = ret.group(1)
 
-        if not file_name.endswith(".py"):
+        # 如果请求文件不是以.html结尾,就直读取内容给client浏览器,如果是以html结尾就发给mini_frame处理,再返回给client   
+        if not file_name.endswith(".html"):
             try:
                 f = open(self.static_path+file_name,"rb")
             except:
