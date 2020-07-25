@@ -1,22 +1,35 @@
 import re
 
+"""
+URL_FUNC_DICT = {
+    "/index.py" : index,
+    "/center.py" : center
+    }
+"""
+
 URL_FUNC_DICT =dict()
 
+def route(PATH):
+    def set_func(func):
+        URL_FUNC_DICT[PATH]=func
+        def call_func(*args,**kwargs):
+            return func(*args,**kwargs)
+        return call_func
+    return set_func
+
+
+@route("/index.py")
 def index():
     with open("./templates/index.html") as f:
         context = f.read()
     return context
 
+
+@route("/center.py")
 def center():
     with open("./templates/center.html") as f:
         context = f.read()
     return context
-
-
-URL_FUNC_DICT = {
-    "/index.py" : index,
-    "/center.py" : center
-    }
 
 
 def application(env,start_response_header):
