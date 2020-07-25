@@ -1,4 +1,5 @@
 import re
+from pymysql import connect
 
 """
 URL_FUNC_DICT = {
@@ -21,8 +22,17 @@ def route(PATH):
 @route("/index.html")
 def index():
     with open("./templates/index.html") as f:
-        context = f.read()
-    return context
+        content = f.read()
+
+    conn = connect(host="localhost",port=3306,user='root',password="123456",database="stock_db",charset="utf8")
+    cs = conn.cursor()
+    cs.execute("select * from info;")
+    stock_infos = cs.fetchall()
+    cs.close()
+    conn.close()
+
+    content = re.sub(r"\{%content%\}",str(stock_infos),content)
+    return content
 
 
 @route("/center.html")
