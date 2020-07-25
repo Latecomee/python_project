@@ -6,7 +6,7 @@ import sys
 
 class mini_server(object):
 
-    def __init__(self,port,app):
+    def __init__(self,port,app,static_path):
         # 创建套接字
         self.tcp_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
@@ -15,6 +15,7 @@ class mini_server(object):
         # 将套接字设为监听模式
         self.tcp_socket.listen(128)
         self.application = app
+        self.static_path = static_path
 
     def server_to_client(self,new_client_socket):
         '''处理client发过的数据,根据需求回发内容'''
@@ -30,7 +31,7 @@ class mini_server(object):
 
         if not file_name.endswith(".py"):
             try:
-                f = open("./html"+file_name,"rb")
+                f = open(self.static_path+file_name,"rb")
             except:
                 print("404 ---- 没找到这个网页 ----")
             else:
@@ -100,12 +101,24 @@ def main():
         print("python3 web_server.py 7788 mini_server:application")
         return
 
-    sys.path.append("./dynamic")  # 为了让__import__()函数找到 mini_server.py
+    # 解耦程序中的文件路径
+    with open("./web_server.conf") as f: 
+        conf_info = eval(f.read())  # eval()函数将读到的内容转换成字典
+        '''
+        {
+            "static_path":"./static",
+            "dynamic_path":"./dynamic"
+        }
+        '''
+
+    # 解耦frame框架
+    sys.path.append(conf_info["dynamic_path"])  # 为了让__import__()函数找到 mini_server.py
     "import frame_name  # 此时import会将frame_name视为模块名,试图导入frame_name模块,而非frame_name保存的内容"
     frame = __import__(frame_name)  # 返回值标记这个导入的模块
     app = getattr(frame,app_name)  # 此时app指向了dynamic/mini_server模块中的application这个函数
 
-    t = mini_server(port,app)
+
+    t = mini_server(port,app,conf_info['static_path'])
     t.run_forever()
 
 
